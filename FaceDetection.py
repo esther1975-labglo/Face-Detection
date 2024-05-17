@@ -6,6 +6,9 @@ from datetime import datetime
 import csv
 
 path = 'Images'
+attendance_path = 'attendance'
+os.makedirs(attendance_path, exist_ok=True)  # Ensure attendance directory exists
+
 images = []
 classNames = []
 
@@ -28,27 +31,24 @@ def findEncodings(images):
 
 def markAttendance(name):
     today = datetime.now().strftime('%Y-%m-%d')
-    filename = f'Attendance_{today}.csv'
+    filename = os.path.join(attendance_path, f'Attendance_{today}.csv')
 
     if not os.path.exists(filename):
         with open(filename, 'w', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=['Name', 'Time', 'Date'])
             writer.writeheader()
-    else:
+    
+    with open(filename, 'r', newline='') as f:
+        reader = csv.DictReader(f)
+        nameList = [row['Name'] for row in reader]
+
+    if name not in nameList:
+        time_now = datetime.now()
+        tString = time_now.strftime('%H:%M:%S')
+        dString = time_now.strftime('%d/%m/%Y')
         with open(filename, 'a', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=['Name', 'Time', 'Date'])
-
-        with open(filename, 'r', newline='') as f:
-            reader = csv.DictReader(f)
-            nameList = [row['Name'] for row in reader]
-
-            if name not in nameList:
-                time_now = datetime.now()
-                tString = time_now.strftime('%H:%M:%S')
-                dString = time_now.strftime('%d/%m/%Y')
-                with open(filename, 'a', newline='') as f:
-                    writer = csv.DictWriter(f, fieldnames=['Name', 'Time', 'Date'])
-                    writer.writerow({'Name': name, 'Time': tString, 'Date': dString})
+            writer.writerow({'Name': name, 'Time': tString, 'Date': dString})
 
 encodeListKnown = findEncodings(images)
 print('Encoding Complete')
