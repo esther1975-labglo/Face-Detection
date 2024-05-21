@@ -7,27 +7,32 @@ import csv
 
 path = 'Images'
 attendance_path = 'attendance'
-os.makedirs(attendance_path, exist_ok=True)  # Ensure attendance directory exists
+os.makedirs(attendance_path, exist_ok=True)  
 
 images = []
 classNames = []
 
-myList = os.listdir(path)
-for cl in myList:
-    curImg = cv2.imread(f'{path}/{cl}')
-    images.append(curImg)
-    classNames.append(os.path.splitext(cl)[0])
+# Recursively read images from subdirectories
+for person_name in os.listdir(path):
+    person_path = os.path.join(path, person_name)
+    if os.path.isdir(person_path):
+        for img_name in os.listdir(person_path):
+            curImg = cv2.imread(os.path.join(person_path, img_name))
+            images.append(curImg)
+            classNames.append(person_name)
 
-def findEncodings(images):
+def findEncodings(images, classNames):
     encodeList = []
-    for img in images:
+    knownNames = []
+    for img, name in zip(images, classNames):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         face_encodings = face_recognition.face_encodings(img)
         if len(face_encodings) > 0:
             encodeList.append(face_encodings[0])
+            knownNames.append(name)
         else:
-            print("No face detected in the image.")
-    return encodeList
+            print(f"No face detected in the image for {name}.")
+    return encodeList, knownNames
 
 def markAttendance(name):
     today = datetime.now().strftime('%Y-%m-%d')
@@ -50,7 +55,7 @@ def markAttendance(name):
             writer = csv.DictWriter(f, fieldnames=['Name', 'Time', 'Date'])
             writer.writerow({'Name': name, 'Time': tString, 'Date': dString})
 
-encodeListKnown = findEncodings(images)
+encodeListKnown, knownNames = findEncodings(images, classNames)
 print('Encoding Complete')
 
 cap = cv2.VideoCapture(0)
@@ -79,7 +84,7 @@ while True:
         print(faceDis)
         matchIndex = np.argmin(faceDis)
         if matches[matchIndex]:
-            name = classNames[matchIndex].upper()
+            name = knownNames[matchIndex].upper()
             print(name)
             y1, x2, y2, x1 = faceLoc
             y1, x2, y2, x1 = y1*4, x2*4, y2*4, x1*4
