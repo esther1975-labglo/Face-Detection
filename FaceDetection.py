@@ -12,7 +12,6 @@ os.makedirs(attendance_path, exist_ok=True)
 images = []
 classNames = []
 
-# Recursively read images from subdirectories
 for person_name in os.listdir(path):
     person_path = os.path.join(path, person_name)
     if os.path.isdir(person_path):
